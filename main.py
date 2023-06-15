@@ -3,6 +3,8 @@ from yaml.loader import SafeLoader
 import yaml
 import streamlit_authenticator as stauth
 from streamlit_authenticator import Authenticate
+# from pages.prediction_page import prediction_page
+
 
 #! Hashing passwords
 # hashed_passwords = stauth.Hasher(['abc', 'def']).generate()
@@ -31,10 +33,37 @@ authenticator = Authenticate(
 name, authentication_status, username = authenticator.login('Login', 'main')
 
 
+def prediction_page():
+    st.title('Aspect Based Sentiment Analysis')
+    st.write(
+        'Enter a review below to get a summary of aspect terms and sentence polarity ')
+
+    form = st.form(key='my_form')
+    txt = form.text_input(label='Enter some text')
+    submit_button = form.form_submit_button(label='Submit')
+
+    from pyabsa import ATEPCCheckpointManager
+
+    aspect_extractor = ATEPCCheckpointManager.get_aspect_extractor(checkpoint='english',
+                                                                   auto_device=True  # False means load model on CPU
+                                                                   )
+
+    atepc_result = aspect_extractor.extract_aspect(inference_source=[txt],  # data needs to be a python list...
+                                                   pred_sentiment=True,  # Predict the sentiment of extracted aspect terms
+                                                   )
+
+    st.write('Sentiment:', atepc_result)
+    # possibly move data into dataframe and display in table
+    print(atepc_result)
+
+
 if authentication_status:
+    # after login succesful
     authenticator.logout('Logout', 'main')
     st.write(f'Welcome *{name}*')
-    st.title('Some content')
+    prediction_page()
+
+
 elif authentication_status == False:
     st.error('Username/password is incorrect')
 
