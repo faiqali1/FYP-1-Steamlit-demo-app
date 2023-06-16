@@ -3,6 +3,7 @@ from yaml.loader import SafeLoader
 import yaml
 import streamlit_authenticator as stauth
 from streamlit_authenticator import Authenticate
+import pandas as pd
 # from pages.prediction_page import prediction_page
 
 
@@ -45,16 +46,35 @@ def prediction_page():
     from pyabsa import ATEPCCheckpointManager
 
     aspect_extractor = ATEPCCheckpointManager.get_aspect_extractor(checkpoint='english',
-                                                                   auto_device=True  # False means load model on CPU
-                                                                   )
+                                                                   auto_device=True)  # False means load model on CPU
 
     atepc_result = aspect_extractor.extract_aspect(inference_source=[txt],  # data needs to be a python list...
-                                                   pred_sentiment=True,  # Predict the sentiment of extracted aspect terms
-                                                   )
+                                                   pred_sentiment=True,)  # Predict the sentiment of extracted aspect terms
 
-    st.write('Sentiment:', atepc_result)
-    # possibly move data into dataframe and display in table
-    print(atepc_result)
+    obj = atepc_result
+    atepc_result
+
+    data = []
+    try:
+        for o in obj:
+            for i in range(len(o['aspect'])):
+                data.append({
+                    'sentence': o['sentence'],
+                    'IOB': o['IOB'],
+                    'tokens': o['tokens'],
+                    'aspect': o['aspect'][i],
+                    'position': o['position'][i],
+                    'sentiment': o['sentiment'][i],
+                    'probs': o['probs'][i],
+                    'confidence': o['confidence'][i],
+                })
+
+        df = pd.DataFrame(data)
+
+        df = df[['aspect', 'sentiment', 'confidence']]
+        df
+    except:
+        st.write('**No aspect terms found**')
 
 
 if authentication_status:
