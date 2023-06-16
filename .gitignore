@@ -164,3 +164,4 @@ Aspect Term Extraction and Polarity Classification.FAST_LCF_ATEPC.result.json
 checkpoints.json
 data
 .DS_Store
+NLTK_Downloader_Script.py
