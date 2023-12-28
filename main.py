@@ -4,7 +4,78 @@ import yaml
 import streamlit_authenticator as stauth
 from streamlit_authenticator import Authenticate
 import pandas as pd
-# from pages.prediction_page import prediction_page
+import plotly.express as px
+
+
+def process_and_label_aspects(api_data):
+    def process_and_label_aspect(api_data):
+        def transform_data(api_data):
+            transformed_data = []
+            sentences_processed = set()
+
+            for entry_list in api_data:  # Expecting a list of lists
+                for entry in entry_list:
+                    sentence = entry["sentence"]
+                    if sentence in sentences_processed:
+                        continue
+
+                    transformed_entry = {
+                        "sentence": sentence,
+                        "tokens": entry["tokens"],
+                        "position": [],
+                        "Aspect": [],
+                        "Sentiment": []
+                    }
+
+                    for aspect_entry in entry_list:
+                        if aspect_entry["sentence"] == sentence:
+                            transformed_entry["position"].append(
+                                aspect_entry["position"][0])
+                            transformed_entry["Aspect"].append(
+                                aspect_entry["Aspect"])
+                            sentiment = "Positive" if aspect_entry["Sentiment"] == "Positive" else (
+                                "Negative" if aspect_entry["Sentiment"] == "Negative" else "Neutral")
+                            transformed_entry["Sentiment"].append(sentiment)
+
+                    sentences_processed.add(sentence)
+                    transformed_data.append(transformed_entry)
+
+            return transformed_data
+
+        def label_aspects_by_tokens(transformed_data):
+            labeled_sentences = []
+
+            for entry in transformed_data:
+                sentence_tokens = entry["tokens"]
+                aspects_data = zip(entry["position"],
+                                   entry["Aspect"], entry["Sentiment"])
+
+                for pos, aspect, sentiment in aspects_data:
+                    if sentiment == "Positive":
+                        color = ":green"
+                    elif sentiment == "Negative":
+                        color = ":red"
+                    else:  # Neutral
+                        color = ":blue"
+
+                    if sentence_tokens[pos] == aspect:
+                        sentence_tokens[pos] = f"{color}[{aspect}]"
+
+                labeled_sentence = " ".join(sentence_tokens)
+                labeled_sentences.append(labeled_sentence)
+
+            return labeled_sentences
+
+        transformed_data = transform_data(api_data)
+        labeled_sentences = label_aspects_by_tokens(transformed_data)
+        return labeled_sentences
+
+    # Example usage with your API data
+
+    labeled_sentences = process_and_label_aspect(api_data)
+
+    for sentence in labeled_sentences:
+        return (sentence)
 
 
 #! Hashing passwords
@@ -17,7 +88,6 @@ import pandas as pd
 
 # User ID: rbriggs
 # Password: def
-
 
 with open('config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
@@ -49,11 +119,13 @@ def highlight_positive(val):
 
 def prediction_page():
     st.title('Aspect Based Sentiment Analysis')
-    st.write(
-        'Enter a review below to get a summary of aspect terms and sentence polarity ')
+    st.write(f'Welcome *{name}* :smile:!')
+    st.write('This is a web application for Aspect Based Sentiment Analysis. The application allows you to enter a sentence and the model will extract the aspect terms and predict the sentiment of each aspect term.')
+    st.write('\n')
+    st.caption('Please enter a sentence below and click submit to extract the aspect terms to predict the sentiment of each aspect term.')
 
     form = st.form(key='my_form')
-    txt = form.text_input(label='Enter some text')
+    txt = form.text_input(label='Enter a sentence')
     submit_button = form.form_submit_button(label='Submit')
 
     from pyabsa import ATEPCCheckpointManager
@@ -62,9 +134,11 @@ def prediction_page():
 
     aspect_extractor = ATEPCCheckpointManager.get_aspect_extractor(checkpoint=model_path,
                                                                    auto_device='mps')  # False means load model on CPU
+    # TODO: add error checking to prevent empty input
 
     atepc_result = aspect_extractor.extract_aspect(inference_source=[txt],  # data needs to be a python list...
-                                                   pred_sentiment=True,)  # Predict the sentiment of extracted aspect terms
+                                                   pred_sentiment=True,)
+    # Predict the sentiment of extracted aspect terms
 
     obj = atepc_result
     # atepc_resul t
@@ -83,14 +157,39 @@ def prediction_page():
                     'probs': o['probs'][i],
                     'Confidence': o['confidence'][i],
                 })
-
+        # data
         df = pd.DataFrame(data)
 
         df = df[['Aspect', 'Sentiment', 'Confidence']]
+        # data
 
+        markdown_text = process_and_label_aspects([data])
+        st.write('\n')
+        st.divider()
+        st.markdown(f"> **{markdown_text}**")
+        st.caption('The aspect terms are highlighted in green for positive sentiment, red for negative sentiment and blue for neutral sentiment.')
+        st.divider()
+        st.header('Aspect Confidence Analysis')
+
+        st.write('\n')
         # df
+        st.write('The table below shows the confidence level of each aspect term.')
         st.dataframe(df.style.applymap(highlight_positive),
                      use_container_width=True, hide_index=True)
+
+        # Create a bar chart
+        fig = px.bar(df, x='Aspect', y='Confidence', color='Sentiment',
+                     labels={'Aspect': 'Aspect', 'Confidence': 'Confidence',
+                             'Sentiment': 'Sentiment'},
+                     title='Aspect Confidence Analysis',
+                     color_discrete_map={'Positive': TAILWIND_600_GREEN, 'Neutral': 'blue', 'Negative': TAILWIND_600_RED})
+
+        # Display the bar chart in Streamlit
+        st.write('\n')
+        st.write(
+            'The bar chart below shows the confidence level of each aspect term.')
+        st.plotly_chart(fig)
+
     except:
         st.write('**No aspect terms found**')
 
@@ -98,7 +197,6 @@ def prediction_page():
 if authentication_status:
     # after login succesful
     authenticator.logout('Logout', 'main')
-    st.write(f'Welcome *{name}*')
     prediction_page()
 
 
