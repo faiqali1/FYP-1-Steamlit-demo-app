@@ -33,6 +33,19 @@ authenticator = Authenticate(
 
 name, authentication_status, username = authenticator.login('Login', 'main')
 
+# Add tailwind colors
+TAILWIND_600_GREEN = '#16a34a'
+TAILWIND_600_RED = '#dc2626'
+
+
+def highlight_positive(val):
+    if val == 'Positive':
+        return f'color: {TAILWIND_600_GREEN}'
+    elif val == 'Negative':
+        return f'color: {TAILWIND_600_RED}'
+    else:
+        return ''
+
 
 def prediction_page():
     st.title('Aspect Based Sentiment Analysis')
@@ -64,17 +77,20 @@ def prediction_page():
                     'sentence': o['sentence'],
                     'IOB': o['IOB'],
                     'tokens': o['tokens'],
-                    'aspect': o['aspect'][i],
+                    'Aspect': o['aspect'][i],
                     'position': o['position'][i],
-                    'sentiment': o['sentiment'][i],
+                    'Sentiment': o['sentiment'][i],
                     'probs': o['probs'][i],
-                    'confidence': o['confidence'][i],
+                    'Confidence': o['confidence'][i],
                 })
 
         df = pd.DataFrame(data)
 
-        df = df[['aspect', 'sentiment', 'confidence']]
-        df
+        df = df[['Aspect', 'Sentiment', 'Confidence']]
+
+        # df
+        st.dataframe(df.style.applymap(highlight_positive),
+                     use_container_width=True, hide_index=True)
     except:
         st.write('**No aspect terms found**')
 
