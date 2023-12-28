@@ -15,6 +15,12 @@ data = pd.read_csv('result/atepc_result.csv')
 data = data[data['aspect'] != '[]']
 data.info()
 
+# streamlit text on screen
+st.title('Aspect Based Sentiment Analysis Training Data Visualisation')
+st.write('The data below is the training data used to train the model. The data is visualised to show the distribution of the data and the confidence level of the model.')
+
+st.caption('The graphs below are interactive. You can hover over the graphs to see more information. You can also zoom in and out of the graphs.')
+st.divider()
 # cleaning the data
 
 data.loc[:, 'aspect'] = data['aspect'].str.replace('[', '')
@@ -53,8 +59,6 @@ final_data['confidence'] = final_data['confidence'].astype(float)
 
 data = final_data
 
-data.head(10)
-
 
 aspect_counts = data['aspect'].value_counts()
 
@@ -67,6 +71,9 @@ fig = px.bar(x=top_aspects.index, y=top_aspects.values, labels={
 fig.update_layout(autosize=False, width=800, height=500)
 # fig.update_xaxes(tickangle=90)
 # fig.show()
+
+st.header('Top 20 Aspects')
+st.write('The top 20 aspects are shown below. The aspect with the highest frequency is *delivery* with a frequency of 679. The aspect with the lowest frequency is *delivered* with a frequency of 56.')
 st.plotly_chart(fig)
 
 
@@ -76,6 +83,9 @@ sentiment_freq = Counter(data['sentiment'].values)
 fig = px.pie(values=list(sentiment_freq.values()), names=list(
     sentiment_freq.keys()), title='Sentiment Distribution')
 # fig.show()
+
+st.header('Sentiment Distribution')
+st.write('The sentiment distribution is shown below. The sentiment with the highest frequency is *positive* with a frequency of 4,709. The sentiment with the lowest frequency is *neutral* with a frequency of 299.')
 st.plotly_chart(fig)
 
 # Count the number of comments for each aspect
@@ -95,6 +105,21 @@ average_confidence = filtered_data.groupby(
 fig = px.bar(average_confidence, x='aspect', y='confidence', title='Average Aspect Confidence Analysis', labels={
     'confidence': 'Average Confidence Level', 'aspect': 'Aspect'})
 # fig.show()
+
+# max_confidence = average_confidence['confidence'].max()
+# max_confidence_aspect = average_confidence[average_confidence['confidence']
+#                                            == max_confidence]['aspect'].values[0]
+# min_confidence = average_confidence['confidence'].min()
+# min_confidence_aspect = average_confidence[average_confidence['confidence']
+#                                            == min_confidence]['aspect'].values[0]
+
+# max_confidence_aspect
+# max_confidence
+# min_confidence_aspect
+# min_confidence
+
+st.header('Average Aspect Confidence Analysis')
+st.write('The average aspect confidence analysis is shown below. Aspect terms with less than 10 comments have been ignored for this visualisation. The aspect with the highest average confidence is *packing* with an average confidence of 0.998. The aspect with the lowest average confidence is *height* with an average confidence of 0.875.')
 st.plotly_chart(fig)
 
 # yes
@@ -106,9 +131,24 @@ aspect_sentiment_count = data.groupby(
 
 COUNT_THRESHOLD = 10
 
-# Filter to only include aspects with more than 20 comments
+# Filter to only include aspects with more than 10 comments
 aspect_sentiment_count = aspect_sentiment_count[aspect_sentiment_count['Count'] > COUNT_THRESHOLD]
 
+# count the max number of positve aspects
+# max_positive = aspect_sentiment_count[aspect_sentiment_count['sentiment']
+#                                       == 'Positive']['Count'].max()
+# max_positive_aspect = aspect_sentiment_count[aspect_sentiment_count['Count']
+#                                              == max_positive]['aspect'].values
+# max_positive_aspect
+# max_positive
+
+# count the max number of negative aspects
+# max_negative = aspect_sentiment_count[aspect_sentiment_count['sentiment']
+#                                       == 'Negative']['Count'].max()
+# max_negative_aspect = aspect_sentiment_count[aspect_sentiment_count['Count']
+#                                              == max_negative]['aspect'].values[0]
+# max_negative_aspect
+# max_negative
 
 # Create a bar chart for the count of positive and negative comments for each aspect
 fig = px.bar(aspect_sentiment_count, x='aspect', y='Count', color='sentiment', title='Count of Positive and Negative Comments per Aspect',
@@ -117,6 +157,9 @@ fig = px.bar(aspect_sentiment_count, x='aspect', y='Count', color='sentiment', t
              color_discrete_map={'positive': 'green', 'neutral': 'blue', 'negative': 'red'})
 fig.update_layout(barmode='group')
 # fig.show()
+
+st.header('Count of Positive and Negative Comments per Aspect')
+st.write('The count of positive and negative comments per aspect is shown below. Aspect terms with less than 10 comments have been ignored for this visualisation. The aspect with the highest number of positive comments is *delivery* with 562 positive comments. The aspect with the highest number of negative comments is *app* with 157 negative comments.')
 st.plotly_chart(fig)
 
 
@@ -124,4 +167,8 @@ fig_confidence_distribution = px.box(data, x='sentiment', y='confidence',
                                      title="Distribution of Confidence Scores by Sentiment",
                                      labels={'sentiment': 'Sentiment', 'confidence': 'Confidence Score'})
 # fig_confidence_distribution.show()
+
+st.header('Distribution of Confidence Scores by Sentiment')
+# st.write('The distribution of confidence scores by sentiment is shown below. The sentiment with the highest median confidence score is *positive* with a confidence score of 0.9983. The sentiment with the lowest median confidence score is *neutral* with a confidence score of 0.9465.')
+st.write('The distribution of confidence scores by sentiment is shown below. *Positive* sentiment has the highest median confidence score of 0.9983. *Negative* sentiment has a median confidence score of 0.9978. *Neutral* sentiment has the lowest median confidence score of 0.9465.')
 st.plotly_chart(fig_confidence_distribution)
