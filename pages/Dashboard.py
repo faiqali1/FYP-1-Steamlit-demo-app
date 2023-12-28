@@ -1,13 +1,21 @@
-import streamlit as st
+import json
+import ast
+from collections import Counter
+import plotly.express as px
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import streamlit as st
 
+data = pd.read_csv('result/atepc_result.csv')
+# data.head(10)
 
-data = pd.read_csv('data/atepc_result.csv')
-data = data[['aspect', 'sentiment', 'confidence']]
+# we drop the ones with no aspects terms
 data = data[data['aspect'] != '[]']
+data.info()
+
+# cleaning the data
 
 data.loc[:, 'aspect'] = data['aspect'].str.replace('[', '')
 data.loc[:, 'aspect'] = data['aspect'].str.replace(']', '')
@@ -21,7 +29,6 @@ data.loc[:, 'confidence'] = data['confidence'].str.replace('[', '')
 data.loc[:, 'confidence'] = data['confidence'].str.replace(']', '')
 data.loc[:, 'confidence'] = data['confidence'].str.replace("'", '')
 
-
 aspect_df = data['aspect'].str.split(
     ',', expand=True).stack().reset_index(level=1, drop=True)
 sentiment_df = data['sentiment'].str.split(
@@ -29,89 +36,92 @@ sentiment_df = data['sentiment'].str.split(
 confidence_df = data['confidence'].astype(str).str.split(
     ',', expand=True).stack().reset_index(level=1, drop=True)
 
+# Join the separate dataframes back together to create the final dataframe
 final_data = pd.DataFrame({
     'aspect': aspect_df,
     'sentiment': sentiment_df,
     'confidence': confidence_df
 })
 
+# assert all columns are of the same length
+assert (len(aspect_df) == len(sentiment_df) == len(confidence_df))
+
 # Convert confidence column back to float type
+final_data['aspect'] = final_data['aspect'].str.strip()
+final_data['sentiment'] = final_data['sentiment'].str.strip()
 final_data['confidence'] = final_data['confidence'].astype(float)
 
 data = final_data
 
+data.head(10)
 
-# vislualsing results
 
 aspect_counts = data['aspect'].value_counts()
 
 # Select the top N aspects to display (optional)
-N = 15
+N = 20
 top_aspects = aspect_counts.head(N)
 
-
-fig, ax = plt.subplots(figsize=(20, 6))
-sns.barplot(x=top_aspects.index, y=top_aspects.values)
-plt.xlabel('Aspect')
-plt.ylabel('Frequency')
-plt.title(f'Top {N} Aspects')
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.show()
-
-st.write("# Top 15 Aspects")
-st.pyplot(fig)
+fig = px.bar(x=top_aspects.index, y=top_aspects.values, labels={
+             'x': 'Aspect', 'y': 'Frequency'}, title=f'Top {N} Aspects')
+fig.update_layout(autosize=False, width=800, height=500)
+# fig.update_xaxes(tickangle=90)
+# fig.show()
+st.plotly_chart(fig)
 
 
-aspect_sentiment_counts = data.groupby(
-    ['aspect', 'sentiment']).size().unstack()
+sentiment_freq = Counter(data['sentiment'].values)
+
+# Create a pie chart for Sentiment Distribution
+fig = px.pie(values=list(sentiment_freq.values()), names=list(
+    sentiment_freq.keys()), title='Sentiment Distribution')
+# fig.show()
+st.plotly_chart(fig)
+
+# Count the number of comments for each aspect
 
 
-filtered_data = data[data['aspect'].isin(top_aspects.index)]
+# Get the aspects that have 10 or more comments
+aspects_with_10_or_more_comments = aspect_counts[aspect_counts >= 10].index
 
-# Plotting the grouped bar chart using seaborn
-# color_dict = {'Positive': 'green', 'Negative': 'red', 'Neutral': 'blue'}
+# Filter the data to include only the aspects with 10 or more comments
+filtered_data = data[data['aspect'].isin(aspects_with_10_or_more_comments)]
 
-fig, ax = plt.subplots(figsize=(20, 6))
+# Calculate the average confidence level for each aspect
+average_confidence = filtered_data.groupby(
+    'aspect')['confidence'].mean().reset_index()
 
+# Plotly visualization
+fig = px.bar(average_confidence, x='aspect', y='confidence', title='Average Aspect Confidence Analysis', labels={
+    'confidence': 'Average Confidence Level', 'aspect': 'Aspect'})
+# fig.show()
+st.plotly_chart(fig)
 
-# plot the data
-sns.barplot(data=filtered_data, x='aspect', y='confidence',
-            hue='sentiment', ax=ax)
-
-# rotate x labels for better visibility if there are many aspects
-plt.xticks(rotation=90)
-
-st.write("# Aspect Sentiment Confidence")
-st.pyplot(fig)
-
-# plt.show()
-
-pivot_df = filtered_data.pivot_table(
-    values='confidence', index='aspect', columns='sentiment', aggfunc=np.mean)
-
-fig, ax = plt.subplots(figsize=(10, 6))
-
-sns.heatmap(pivot_df, annot=True, center=0.0, ax=ax)
-
-st.write("# Aspect Sentiment Confidence")
-st.pyplot(fig)
+# yes
 
 
-# Plotting the grouped bar chart using seaborn
-color_dict = {'Positive': 'green', 'Negative': 'red', 'Neutral': 'blue'}
+# Group by aspect and sentiment and count occurrences
+aspect_sentiment_count = data.groupby(
+    ['aspect', 'sentiment']).size().reset_index(name='Count')
 
-# map sentiments to colors in the DataFrame
-filtered_data['color'] = filtered_data['sentiment'].map(color_dict)
-st.write('# Aspect Sentiment Classification')
-fig, ax = plt.subplots(figsize=(10, 6))
+COUNT_THRESHOLD = 10
 
-# plot the data
-# you can adjust the multiplier on 'confidence' in s to get an appropriate size for your bubbles
-scatter = ax.scatter(filtered_data['aspect'], filtered_data['sentiment'],
-                     s=filtered_data['confidence']*1000, c=filtered_data['color'], alpha=0.6)
+# Filter to only include aspects with more than 20 comments
+aspect_sentiment_count = aspect_sentiment_count[aspect_sentiment_count['Count'] > COUNT_THRESHOLD]
 
-# rotate x labels for better visibility
-plt.xticks(rotation=90)
 
-st.pyplot(fig)
+# Create a bar chart for the count of positive and negative comments for each aspect
+fig = px.bar(aspect_sentiment_count, x='aspect', y='Count', color='sentiment', title='Count of Positive and Negative Comments per Aspect',
+             labels={'Count': 'Number of Comments',
+                     'Aspect': 'Aspect', 'Sentiment': 'Sentiment'},
+             color_discrete_map={'positive': 'green', 'neutral': 'blue', 'negative': 'red'})
+fig.update_layout(barmode='group')
+# fig.show()
+st.plotly_chart(fig)
+
+
+fig_confidence_distribution = px.box(data, x='sentiment', y='confidence',
+                                     title="Distribution of Confidence Scores by Sentiment",
+                                     labels={'sentiment': 'Sentiment', 'confidence': 'Confidence Score'})
+# fig_confidence_distribution.show()
+st.plotly_chart(fig_confidence_distribution)
