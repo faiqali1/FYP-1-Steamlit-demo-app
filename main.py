@@ -45,14 +45,16 @@ def prediction_page():
 
     from pyabsa import ATEPCCheckpointManager
 
-    aspect_extractor = ATEPCCheckpointManager.get_aspect_extractor(checkpoint='english',
-                                                                   auto_device=True)  # False means load model on CPU
+    model_path = 'state_dict_model_FACT_LCF_ATEPC/fast_lcf_atepc_custom_dataset_cdw_apcacc_89.89_apcf1_75.38_atef1_80.49'
+
+    aspect_extractor = ATEPCCheckpointManager.get_aspect_extractor(checkpoint=model_path,
+                                                                   auto_device='mps')  # False means load model on CPU
 
     atepc_result = aspect_extractor.extract_aspect(inference_source=[txt],  # data needs to be a python list...
                                                    pred_sentiment=True,)  # Predict the sentiment of extracted aspect terms
 
     obj = atepc_result
-    atepc_result
+    # atepc_resul t
 
     data = []
     try:
