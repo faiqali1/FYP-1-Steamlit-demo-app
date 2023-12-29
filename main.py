@@ -132,8 +132,12 @@ def prediction_page():
 
     model_path = 'state_dict_model_FACT_LCF_ATEPC/fast_lcf_atepc_custom_dataset_cdw_apcacc_89.89_apcf1_75.38_atef1_80.49'
 
-    aspect_extractor = ATEPCCheckpointManager.get_aspect_extractor(checkpoint=model_path,
-                                                                   auto_device='mps')  # False means load model on CPU
+    @st.cache(allow_output_mutation=True)
+    def load_model():
+        return ATEPCCheckpointManager.get_aspect_extractor(checkpoint=model_path,
+                                                           auto_device='mps')
+
+    aspect_extractor = load_model()
     # TODO: add error checking to prevent empty input
 
     atepc_result = aspect_extractor.extract_aspect(inference_source=[txt],  # data needs to be a python list...
