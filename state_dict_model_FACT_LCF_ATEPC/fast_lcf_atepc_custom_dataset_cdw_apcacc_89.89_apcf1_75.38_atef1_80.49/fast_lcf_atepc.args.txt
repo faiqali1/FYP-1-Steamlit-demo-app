@@ -1,0 +1,53 @@
+model: <class 'pyabsa.tasks.AspectTermExtraction.models.__lcf__.fast_lcf_atepc.FAST_LCF_ATEPC'>
+optimizer: adamw
+learning_rate: 2e-05
+cache_dataset: True
+warmup_step: -1
+use_bert_spc: True
+max_seq_len: 80
+SRD: 3
+use_syntax_based_SRD: False
+lcf: cdw
+dropout: 0.5
+l2reg: 1e-05
+num_epoch: 10
+batch_size: 16
+seed: 1
+output_dim: 3
+log_step: 245
+patience: 2
+gradient_accumulation_steps: 1
+dynamic_truncate: True
+evaluate_begin: 0
+use_amp: False
+cross_validate_fold: -1
+pretrained_bert: microsoft/deberta-v3-base
+verbose: True
+dataset: 105.review
+from_checkpoint: None
+checkpoint_save_mode: 1
+auto_device: mps
+path_to_save: state_dict_model_FACT_LCF_ATEPC
+load_aug: False
+device: mps
+device_name: 
+model_name: fast_lcf_atepc
+hidden_dim: 768
+PyABSAVersion: 2.3.4
+TransformersVersion: 4.35.0
+TorchVersion: 2.1.0+cudaNone
+dataset_name: custom_dataset
+save_mode: 1
+logger: <Logger fast_lcf_atepc (INFO)>
+task_code: ATEPC
+task_name: Aspect Term Extraction and Polarity Classification
+dataset_file: {'train': ['dataset/105.review/train.csv.apc.atepc'], 'test': ['dataset/105.review/test.csv.apc.atepc'], 'valid': ['dataset/105.review/valid.csv.apc.atepc']}
+model_path_to_save: state_dict_model_FACT_LCF_ATEPC
+spacy_model: en_core_web_sm
+IOB_label_to_index: {'B-ASP': 1, 'I-ASP': 2, 'O': 3, '[CLS]': 4, '[SEP]': 5}
+index_to_label: {0: 'Negative', 1: 'Neutral', 2: 'Positive'}
+label_list: ['B-ASP', 'I-ASP', 'O', '[CLS]', '[SEP]']
+num_labels: 6
+sep_indices: 2
+max_test_metrics: {'max_apc_test_acc': 89.89, 'max_apc_test_f1': 78.77, 'max_ate_test_f1': 80.49}
+metrics_of_this_checkpoint: {'apc_acc': 89.89, 'apc_f1': 75.38, 'ate_f1': 80.49}
