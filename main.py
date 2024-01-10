@@ -118,7 +118,7 @@ def highlight_positive(val):
 
 
 def prediction_page():
-    st.title('Aspect Based Sentiment Analysis')
+    st.title('Aspect Based Sentiment Analysis on Shopee')
     st.write(f'Welcome *{name}* :smile:!')
     st.write('This is a web application for Aspect Based Sentiment Analysis. The application allows you to enter a sentence and the model will extract the aspect terms and predict the sentiment of each aspect term.')
     st.write('\n')
