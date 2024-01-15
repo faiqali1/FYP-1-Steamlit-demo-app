@@ -6,4 +6,12 @@ This part of the project uses Streamlit for creating the web application and it 
 
 The main file in this repository is main.py, which contains the Streamlit application.
 
-Please note that this README is created based on the current state of the repositories. The actual content and structure of the projects may vary as they are developed further​​
+Below are the links for the staging and production version of the application.
+
+## Staging
+
+<https://stging-fa-fyo.streamlit.app/>
+
+## Production
+
+<https://fyp-1-steamlit-demo-app-mgr6megylapp4xwtlqqdwj8.streamlit.app/>
